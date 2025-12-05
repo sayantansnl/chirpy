@@ -13,9 +13,9 @@ func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
 }
 
 func (cfg *apiConfig) numRequestsHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(200)
-	body := []byte(fmt.Sprintf("Hits: %d", int(cfg.fileserverHits.Load())))
+	body := []byte(fmt.Sprintf("<html><body><h1>Welcome, Chirpy Admin</h1><p>Chirpy has been visited %d times!</p></body></html>", int(cfg.fileserverHits.Load())))
 	if _, err := w.Write(body); err != nil {
 		http.Error(w, "error displaying number of requests", http.StatusInternalServerError)
 	}
