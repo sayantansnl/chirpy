@@ -22,7 +22,18 @@ func (cfg *apiConfig) numRequestsHandler(w http.ResponseWriter, r *http.Request)
 }
 
 func (cfg *apiConfig) resetHandler(w http.ResponseWriter, r *http.Request) {
+	if cfg.platform != "dev" {
+		respondWithError(w, http.StatusForbidden, "dangerous to use", nil)
+		return
+	}
+
 	cfg.fileserverHits.Store(0)
+	if err := cfg.queries.DeleteUsers(r.Context()); err != nil {
+		respondWithError(w, http.StatusInternalServerError, "unable to reset", err)
+		return
+	}
+
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	w.WriteHeader(200)
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("reset successful"))
 }

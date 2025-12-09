@@ -1,3 +1,4 @@
 out
 chirpy
 connection_string.txt
+.env
