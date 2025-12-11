@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"net/http"
 	"testing"
 	"time"
 
@@ -116,5 +117,38 @@ func TestValidateJWT(t *testing.T) {
 				t.Errorf("ValidateJWT() gotUserID = %v, want %v", gotUserID, tt.wantUserID)
 			}
 		})
+	}
+}
+
+func TestGetBearerToken_Success(t *testing.T) {
+	headers := http.Header{}
+	headers.Set("Authorization", "Bearer my-token-123")
+
+	token, err := GetBearerToken(headers)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if token != "my-token-123" {
+		t.Fatalf("expected token: %q, got token: %q", "my-token-123", token)
+	}
+}
+
+func TestGetBearerToken_NoHeader(t *testing.T) {
+	headers := http.Header{} // no Authorization header
+
+	_, err := GetBearerToken(headers)
+	if err != ErrNoAuthHeaderIncluded {
+		t.Fatalf("expected ErrNoAuthHeaderIncluded, got: %v", err)
+	}
+}
+
+func TestGetBearerToken_Malformed(t *testing.T) {
+	headers := http.Header{}
+	headers.Set("Authorization", "Invalid my-token-123")
+
+	_, err := GetBearerToken(headers)
+	if err == nil {
+		t.Fatalf("expected error for malformed header, got nil")
 	}
 }
