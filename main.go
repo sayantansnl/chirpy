@@ -17,12 +17,14 @@ type apiConfig struct {
 	fileserverHits  atomic.Int32
 	queries         *database.Queries
 	platform        string
+	secret          string
 }
 
 func main() {
 	godotenv.Load()
 	dbURL := os.Getenv("DB_URL")
 	platform := os.Getenv("PLATFORM")
+	secret := os.Getenv("SECRET")
 
 	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
@@ -37,6 +39,7 @@ func main() {
 	apiCfg := &apiConfig{
 		queries: dbQueries,
 		platform: platform,
+		secret: secret,
 	}
 
 	handler := http.FileServer(http.Dir(filepathRoot))
