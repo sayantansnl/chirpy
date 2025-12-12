@@ -6,13 +6,13 @@ import (
 	"time"
 
 	"github.com/sayantansnl/chirpy/internal/auth"
+	"github.com/sayantansnl/chirpy/internal/database"
 )
 
 func (cfg *apiConfig) loginHandler(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
-		Email            string `json:"email"`
-		Password         string `json:"password"`
-		ExpiresInSeconds int    `json:"expires_in_seconds"`
+		Email      string `json:"email"`
+		Password   string `json:"password"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -39,13 +39,23 @@ func (cfg *apiConfig) loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if params.ExpiresInSeconds == 0 || params.ExpiresInSeconds > 3600 {
-		params.ExpiresInSeconds = 3600
+	t, err := auth.MakeRefreshToken()
+	if err != nil {
+		respondWithError(w, http.StatusBadGateway, "unable to generate refresh token", err)
+		return
 	}
 
-	expires := time.Duration(params.ExpiresInSeconds) * time.Second
+	rT, err := cfg.queries.CreateRefreshToken(r.Context(), database.CreateRefreshTokenParams{
+		Token: t,
+		UserID: user.ID,
+		ExpiresAt: time.Now().UTC().Add(60 * 24 * time.Hour),
+	})
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "unable to insert into database refresh_tokens", err)
+		return
+	}
 
-	token, err := auth.MakeJWT(user.ID, cfg.secret, expires)
+	token, err := auth.MakeJWT(user.ID, cfg.secret, time.Hour)
 	if err != nil {
 		respondWithError(w, http.StatusExpectationFailed, "unable to generate token", err)
 		return
@@ -57,6 +67,7 @@ func (cfg *apiConfig) loginHandler(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt: user.UpdatedAt,
 		Email: user.Email,
 		Token: token,
+		RefreshToken: rT.Token,
 	})
 
 }
