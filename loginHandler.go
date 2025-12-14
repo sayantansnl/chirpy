@@ -68,6 +68,7 @@ func (cfg *apiConfig) loginHandler(w http.ResponseWriter, r *http.Request) {
 		Email: user.Email,
 		Token: token,
 		RefreshToken: rT.Token,
+		IsChirpyRed: user.IsChirpyRed,
 	})
 
 }
