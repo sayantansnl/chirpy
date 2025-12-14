@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/sayantansnl/chirpy/internal/auth"
 )
 
 func (cfg *apiConfig) webhooksHandler(w http.ResponseWriter, r *http.Request) {
@@ -19,6 +20,17 @@ func (cfg *apiConfig) webhooksHandler(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&params); err != nil {
 		respondWithError(w, http.StatusBadRequest, "unable to decode parameters", err)
+		return
+	}
+
+	apiKey, err := auth.GetAPIKey(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "unable to get API key", err)
+		return
+	}
+
+	if apiKey != cfg.key {
+		respondWithError(w, http.StatusUnauthorized, "mismatched keys", err)
 		return
 	}
 
